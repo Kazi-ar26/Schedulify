@@ -1,0 +1,303 @@
+/*
+    Schedulify Light Theme
+
+    Brand:
+    - Yellow / Orange
+
+    UI:
+    - Clean white surfaces
+    - Soft gray backgrounds
+    - Professional workspace feel
+*/
+
+
+/* ------------------------------
+   Main Background
+------------------------------ */
+
+QMainWindow,
+QWidget {
+
+    background-color: #F7F8FA;
+
+    color: #1F2937;
+
+}
+
+
+/* =================================================
+   SIDEBAR
+================================================= */
+
+QWidget#sidebar {
+
+    background-color: #FFFFFF;
+
+    border-right: 1px solid #E5E7EB;
+
+}
+
+
+QPushButton#sidebarButton,
+QPushButton#sidebarUtilityButton {
+
+    background-color: transparent;
+
+    color: #6B7280;
+
+}
+
+
+QPushButton#sidebarButton:hover,
+QPushButton#sidebarUtilityButton:hover {
+
+    background-color: #F3F4F6;
+
+    color: #111827;
+
+}
+
+
+QPushButton#sidebarButton[active="true"] {
+
+    background-color: #FFF8E1;
+
+    color: #D99700;
+
+    border-left: 4px solid #FFC107;
+
+}
+
+
+/* ------------------------------
+   Text
+------------------------------ */
+
+QLabel {
+
+    color: #374151;
+
+}
+
+
+#dashboardTitle {
+
+    color: #111827;
+
+}
+
+
+/* =================================================
+   BUTTONS
+================================================= */
+
+QPushButton {
+
+    background-color: #E5E7EB;
+
+    color: #111827;
+
+}
+
+
+QPushButton:hover {
+
+    background-color: #D1D5DB;
+
+}
+
+
+QPushButton:pressed {
+
+    background-color: #C4C9D1;
+
+}
+
+
+/* =================================================
+   PRIMARY ACCENT
+================================================= */
+
+QPushButton#primary {
+
+    background-color: #FFC107;
+
+    color: #111111;
+
+    font-weight: 600;
+
+}
+
+
+QPushButton#primary:hover {
+
+    background-color: #FFB300;
+
+}
+
+
+/* =================================================
+   INPUTS
+================================================= */
+
+QLineEdit,
+QComboBox,
+QSpinBox {
+
+    background-color: #FFFFFF;
+
+    color: #111827;
+
+    border-color: #D1D5DB;
+
+}
+
+
+QLineEdit:focus,
+QComboBox:focus,
+QSpinBox:focus {
+
+    border-color: #FFC107;
+
+}
+
+
+/* =================================================
+   LISTS
+================================================= */
+
+QListWidget {
+
+    background-color: #FFFFFF;
+
+    color: #111827;
+
+    border: 1px solid #E5E7EB;
+
+}
+
+
+QListWidget::item:hover {
+
+    background-color: #F3F4F6;
+
+}
+
+
+QListWidget::item:selected {
+
+    background-color: #FFC107;
+
+    color: #111111;
+
+}
+
+
+/* =================================================
+   CARDS
+================================================= */
+
+QFrame {
+
+    background-color: #FFFFFF;
+
+    border: 1px solid #E5E7EB;
+
+    border-radius: 14px;
+
+}
+
+
+QGroupBox {
+
+    background-color: #FFFFFF;
+
+    border: 1px solid #E5E7EB;
+
+    border-radius: 14px;
+
+}
+
+
+/* =================================================
+   CHECKBOXES
+================================================= */
+
+QCheckBox {
+
+    color: #374151;
+
+}
+
+
+/* =================================================
+   SCROLLBARS
+================================================= */
+
+QScrollBar:vertical {
+
+    background-color: #F3F4F6;
+
+}
+
+
+QScrollBar::handle:vertical {
+
+    background-color: #CBD5E1;
+
+}
+
+/* =================================================
+   NAVBAR
+================================================= */
+
+QWidget#navbar {
+
+    background-color: white;
+    border-bottom: 1px solid #E5E7EB;
+
+}
+
+QLabel#navbarTitle {
+
+    color: #111827;
+    font-size: 24px;
+    font-weight: 700;
+
+}
+
+QLabel#navbarUser {
+
+    color: #374151;
+    font-weight: 600;
+
+}
+
+QPushButton#navbarIconButton {
+
+    background-color: transparent;
+    border: none;
+
+    min-width: 42px;
+    max-width: 42px;
+
+    min-height: 42px;
+    max-height: 42px;
+
+    border-radius: 21px;
+
+    padding: 0px;
+
+}
+
+QPushButton#navbarIconButton:hover {
+
+    background-color: #F3F4F6;
+
+}
+
+QPushButton#navbarIconButton:pressed {
+
+    background-color: #E5E7EB;
+
+}

@@ -1,0 +1,338 @@
+/*
+==================================================
+                Schedulify Dark Theme
+==================================================
+*/
+
+
+/* ==================================================
+   MAIN WINDOW
+================================================== */
+
+QMainWindow,
+QWidget{
+
+    background:#0F1117;
+
+    color:#E8EAED;
+
+}
+
+
+/* ==================================================
+   SIDEBAR
+================================================== */
+
+QWidget#sidebar{
+
+    background:#111318;
+
+    border-right:1px solid #222833;
+
+}
+
+
+QPushButton#sidebarButton,
+QPushButton#sidebarUtilityButton{
+
+    background:transparent;
+
+    color:#98A2B3;
+
+}
+
+
+QPushButton#sidebarButton:hover,
+QPushButton#sidebarUtilityButton:hover{
+
+    background:#1A1F28;
+
+    color:white;
+
+}
+
+
+QPushButton#sidebarButton[active="true"]{
+
+    background:rgba(255,193,7,0.13);
+
+    color:#FFC107;
+
+    border-left:4px solid #FFC107;
+
+}
+
+
+/* =================================================
+   NAVBAR
+================================================= */
+
+QWidget#navbar {
+
+    background-color: #111318;
+    border-bottom: 1px solid #252B38;
+
+}
+
+QLabel#navbarTitle {
+
+    color: white;
+    font-size: 24px;
+    font-weight: 700;
+
+}
+
+QLabel#navbarUser {
+
+    color: #E8EAED;
+    font-weight: 600;
+
+}
+
+QPushButton#navbarIconButton {
+
+    background-color: transparent;
+    border: none;
+
+    min-width: 42px;
+    max-width: 42px;
+
+    min-height: 42px;
+    max-height: 42px;
+
+    border-radius: 21px;
+
+    padding: 0px;
+
+}
+
+QPushButton#navbarIconButton:hover {
+
+    background-color: #1F2430;
+
+}
+
+QPushButton#navbarIconButton:pressed {
+
+    background-color: #2B3140;
+
+}
+
+
+/* ==================================================
+   TEXT
+================================================== */
+
+QLabel{
+
+    color:#E8EAED;
+
+}
+
+
+#dashboardTitle{
+
+    color:white;
+
+}
+
+
+/* ==================================================
+   BUTTONS
+================================================== */
+
+QPushButton{
+
+    background:#1F2430;
+
+    color:white;
+
+}
+
+
+QPushButton:hover{
+
+    background:#2A3140;
+
+}
+
+
+QPushButton:pressed{
+
+    background:#374151;
+
+}
+
+
+QPushButton#primary{
+
+    background:#FFC107;
+
+    color:#111111;
+
+    font-weight:600;
+
+}
+
+
+QPushButton#primary:hover{
+
+    background:#FFB300;
+
+}
+
+
+/* ==================================================
+   INPUTS
+================================================== */
+
+QLineEdit,
+QComboBox,
+QSpinBox{
+
+    background:#171B24;
+
+    color:white;
+
+    border:1px solid #303747;
+
+}
+
+
+QLineEdit:focus,
+QComboBox:focus,
+QSpinBox:focus{
+
+    border:2px solid #FFC107;
+
+}
+
+
+/* ==================================================
+   LISTS
+================================================== */
+
+QListWidget{
+
+    background:#171B24;
+
+    border:1px solid #252B38;
+
+    color:white;
+
+}
+
+
+QListWidget::item:hover{
+
+    background:#222938;
+
+}
+
+
+QListWidget::item:selected{
+
+    background:#FFC107;
+
+    color:#111111;
+
+}
+
+
+/* ==================================================
+   CARDS
+================================================== */
+
+QFrame{
+
+    background:#171B24;
+
+    border:1px solid #252B38;
+
+    border-radius:16px;
+
+}
+
+
+QFrame:hover{
+
+    border:1px solid #3B4354;
+
+}
+
+
+QGroupBox{
+
+    background:#171B24;
+
+    border:1px solid #252B38;
+
+    border-radius:16px;
+
+}
+
+
+QGroupBox::title{
+
+    color:#FFFFFF;
+
+}
+
+
+/* ==================================================
+   CHECKBOX
+================================================== */
+
+QCheckBox{
+
+    color:#E8EAED;
+
+}
+
+
+/* ==================================================
+   SCROLLBAR
+================================================== */
+
+QScrollBar:vertical{
+
+    background:#111318;
+
+    width:8px;
+
+}
+
+
+QScrollBar::handle:vertical{
+
+    background:#485264;
+
+    border-radius:4px;
+
+}
+
+
+QScrollBar::handle:vertical:hover{
+
+    background:#5B6578;
+
+}
+
+
+/* ==================================================
+   TOOLTIP
+================================================== */
+
+QToolTip{
+
+    background:#1F2430;
+
+    color:white;
+
+    border:1px solid #303747;
+
+    padding:6px;
+
+    border-radius:8px;
+
+}

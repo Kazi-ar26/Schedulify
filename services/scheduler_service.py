@@ -1,0 +1,226 @@
+"""
+Schedulify Schedule Service
+
+Responsible for:
+- Schedule management
+- Rescheduling
+- Schedule queries
+"""
+
+from datetime import date, datetime
+from typing import Optional
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from models.schedule import (
+    Schedule,
+    ScheduleStatus
+)
+from models.student import Student
+from models.task import Task
+
+
+class SchedulerService:
+
+    # -------------------------------------------------
+    # Create
+    # -------------------------------------------------
+
+    @staticmethod
+    def create_schedule(
+        session: Session,
+        *,
+        student: Student,
+        task: Task,
+        scheduled_date: datetime,
+        start_time,
+        end_time,
+        generated_by_ai: bool = False
+    ) -> Schedule:
+
+        # -------------------------------------------------
+        # Prevent duplicate schedules for the same task
+        # -------------------------------------------------
+
+        existing_schedule = session.scalar(
+            select(Schedule)
+            .where(
+                Schedule.task_id == task.id
+            )
+        )
+
+        if existing_schedule is not None:
+            return existing_schedule
+
+
+        schedule = Schedule(
+            student_id=student.id,
+            task_id=task.id,
+            scheduled_date=scheduled_date,
+            start_time=start_time,
+            end_time=end_time,
+            generated_by_ai=generated_by_ai
+        )
+
+        session.add(schedule)
+
+        try:
+
+            session.commit()
+
+            session.refresh(schedule)
+
+            return schedule
+
+        except Exception:
+
+            session.rollback()
+
+            raise
+
+    # -------------------------------------------------
+    # Read
+    # -------------------------------------------------
+
+    @staticmethod
+    def get_schedule_by_id(
+        session: Session,
+        schedule_id: int
+    ) -> Optional[Schedule]:
+
+        statement = select(Schedule).where(
+            Schedule.id == schedule_id
+        )
+
+        return session.scalar(statement)
+
+    @staticmethod
+    def get_student_schedules(
+        session: Session,
+        student: Student
+    ) -> list[Schedule]:
+
+        statement = (
+            select(Schedule)
+            .where(
+                Schedule.student_id == student.id
+            )
+            .order_by(
+                Schedule.scheduled_date,
+                Schedule.start_time
+            )
+        )
+
+        return list(
+            session.scalars(statement).all()
+        )
+
+    @staticmethod
+    def get_schedules_for_date(
+        session: Session,
+        student: Student,
+        target_date: date
+    ) -> list[Schedule]:
+
+        statement = (
+            select(Schedule)
+            .where(
+                Schedule.student_id == student.id
+            )
+        )
+
+        schedules = list(
+            session.scalars(statement).all()
+        )
+
+        return [
+
+            schedule
+
+            for schedule in schedules
+
+            if schedule.scheduled_date.date() == target_date
+
+        ]
+
+    @staticmethod
+    def get_today_schedule(
+        session: Session,
+        student: Student
+    ) -> list[Schedule]:
+
+        return SchedulerService.get_schedules_for_date(
+            session,
+            student,
+            date.today()
+        )
+
+    # -------------------------------------------------
+    # Update
+    # -------------------------------------------------
+
+    @staticmethod
+    def update_schedule(
+        session: Session,
+        schedule: Schedule,
+        **changes
+    ) -> Schedule:
+
+        for key, value in changes.items():
+
+            if hasattr(schedule, key):
+
+                setattr(schedule, key, value)
+
+        session.commit()
+        session.refresh(schedule)
+
+        return schedule
+
+    @staticmethod
+    def reschedule(
+        session: Session,
+        schedule: Schedule,
+        *,
+        scheduled_date: datetime,
+        start_time,
+        end_time
+    ) -> Schedule:
+
+        schedule.scheduled_date = scheduled_date
+        schedule.start_time = start_time
+        schedule.end_time = end_time
+        schedule.status = ScheduleStatus.RESCHEDULED
+
+        session.commit()
+        session.refresh(schedule)
+
+        return schedule
+
+    @staticmethod
+    def mark_completed(
+        session: Session,
+        schedule: Schedule
+    ) -> Schedule:
+
+        schedule.mark_completed()
+
+        session.commit()
+        session.refresh(schedule)
+
+        return schedule
+
+    # -------------------------------------------------
+    # Delete
+    # -------------------------------------------------
+
+    @staticmethod
+    def delete_schedule(
+        session: Session,
+        schedule: Schedule
+    ) -> None:
+
+        session.delete(schedule)
+
+        session.commit()

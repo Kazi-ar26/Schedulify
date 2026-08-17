@@ -1,0 +1,67 @@
+{
+    "application": {
+        "name": "Schedulify",
+        "version": "1.0.0",
+        "environment": "development",
+        "author": "Schedulify Development Team"
+    },
+
+    "database": {
+        "type": "mysql",
+        "driver": "pymysql",
+        "host": "localhost",
+        "port": 3306,
+        "database_name": "schedulify",
+        "pool_size": 10,
+        "max_overflow": 20,
+        "echo": false
+    },
+
+    "ui": {
+        "theme": "dark",
+        "default_window_width": 1440,
+        "default_window_height": 900,
+        "minimum_window_width": 1100,
+        "minimum_window_height": 700,
+        "animations_enabled": true
+    },
+
+    "features": {
+        "ai_scheduler": true,
+        "automatic_rescheduling": true,
+        "analytics": true,
+        "teacher_dashboard": true,
+        "notifications": true,
+        "wellbeing_indicators": true
+    },
+
+    "security": {
+        "password_hash_algorithm": "bcrypt",
+        "session_timeout_minutes": 60,
+        "max_login_attempts": 5
+    },
+
+    "scheduler": {
+        "working_hours_start": "06:00",
+        "working_hours_end": "23:00",
+        "default_task_duration_minutes": 60,
+        "priority_weights": {
+            "urgent": 5,
+            "high": 4,
+            "medium": 3,
+            "low": 2
+        }
+    },
+
+    "analytics": {
+        "enable_productivity_tracking": true,
+        "anonymous_teacher_reporting": true,
+        "data_retention_days": 365
+    },
+
+    "logging": {
+        "enabled": true,
+        "log_level": "INFO",
+        "log_file": "logs/schedulify.log"
+    }
+}
