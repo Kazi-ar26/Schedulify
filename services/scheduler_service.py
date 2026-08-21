@@ -24,6 +24,25 @@ from models.task import Task
 class SchedulerService:
 
     # -------------------------------------------------
+    # Time Normalization
+    # -------------------------------------------------
+
+    @staticmethod
+    def _normalize_time(value):
+        """
+        Converts datetime values to time values for
+        SQLAlchemy Time columns.
+
+        SQLite requires Python datetime.time objects
+        for Time columns.
+        """
+
+        if isinstance(value, datetime):
+            return value.time()
+
+        return value
+
+    # -------------------------------------------------
     # Create
     # -------------------------------------------------
 
@@ -53,6 +72,14 @@ class SchedulerService:
         if existing_schedule is not None:
             return existing_schedule
 
+        # SQLite Time columns require datetime.time
+        start_time = SchedulerService._normalize_time(
+            start_time
+        )
+
+        end_time = SchedulerService._normalize_time(
+            end_time
+        )
 
         schedule = Schedule(
             student_id=student.id,
@@ -135,13 +162,9 @@ class SchedulerService:
         )
 
         return [
-
             schedule
-
             for schedule in schedules
-
             if schedule.scheduled_date.date() == target_date
-
         ]
 
     @staticmethod
@@ -169,9 +192,18 @@ class SchedulerService:
 
         for key, value in changes.items():
 
+            if key in ("start_time", "end_time"):
+                value = SchedulerService._normalize_time(
+                    value
+                )
+
             if hasattr(schedule, key):
 
-                setattr(schedule, key, value)
+                setattr(
+                    schedule,
+                    key,
+                    value
+                )
 
         session.commit()
         session.refresh(schedule)
@@ -189,8 +221,19 @@ class SchedulerService:
     ) -> Schedule:
 
         schedule.scheduled_date = scheduled_date
-        schedule.start_time = start_time
-        schedule.end_time = end_time
+
+        schedule.start_time = (
+            SchedulerService._normalize_time(
+                start_time
+            )
+        )
+
+        schedule.end_time = (
+            SchedulerService._normalize_time(
+                end_time
+            )
+        )
+
         schedule.status = ScheduleStatus.RESCHEDULED
 
         session.commit()

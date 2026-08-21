@@ -5,9 +5,8 @@ Responsible for:
 - Creating SQLAlchemy engine
 - Defining ORM Base
 - Creating session factory
-- Managing database connection settings
+- Managing database initialization
 """
-
 
 import logging
 
@@ -20,7 +19,6 @@ from Database.connection import (
 )
 
 
-
 # -------------------------------------------------
 # Database Configuration
 # -------------------------------------------------
@@ -30,23 +28,11 @@ database_settings = get_database_settings()
 DATABASE_URL = get_database_url()
 
 
-
 # -------------------------------------------------
 # SQLAlchemy Base
 # -------------------------------------------------
 
-"""
-All ORM models inherit from this Base.
-
-Example:
-
-class User(Base):
-    __tablename__ = "users"
-
-"""
-
 Base = declarative_base()
-
 
 
 # -------------------------------------------------
@@ -56,24 +42,13 @@ Base = declarative_base()
 try:
 
     engine = create_engine(
-
         DATABASE_URL,
-
-        pool_size=10,
-
-        max_overflow=20,
-
-        pool_pre_ping=True,
-
         echo=False
-
     )
-
 
     logging.info(
-        "SQLAlchemy engine created successfully."
+        "SQLite database engine created successfully."
     )
-
 
 except Exception as error:
 
@@ -84,21 +59,15 @@ except Exception as error:
     raise
 
 
-
 # -------------------------------------------------
 # Session Factory
 # -------------------------------------------------
 
 SessionLocal = sessionmaker(
-
     autocommit=False,
-
     autoflush=False,
-
     bind=engine
-
 )
-
 
 
 # -------------------------------------------------
@@ -107,22 +76,26 @@ SessionLocal = sessionmaker(
 
 def initialize_database():
     """
-    Creates database tables.
-
-    Used only for development/testing.
-
-    Production deployments should use Alembic migrations.
+    Creates all database tables.
     """
 
     Base.metadata.create_all(
         bind=engine
     )
 
-
     logging.info(
-        "Database tables initialized."
+        "SQLite database tables initialized."
     )
 
+
+def init_database():
+    """
+    Compatibility alias used by existing application code.
+    """
+
+    Base.metadata.create_all(
+        bind=engine
+    )
 
 
 # -------------------------------------------------
@@ -131,7 +104,7 @@ def initialize_database():
 
 def test_database_connection() -> bool:
     """
-    Checks MySQL connection status.
+    Checks SQLite database connection status.
     """
 
     try:
@@ -139,22 +112,15 @@ def test_database_connection() -> bool:
         with engine.connect():
 
             logging.info(
-                "MySQL database connection successful."
+                "SQLite database connection successful."
             )
 
             return True
 
-
     except Exception as error:
 
         logging.error(
-            f"MySQL connection failed: {error}"
+            f"SQLite connection failed: {error}"
         )
 
         return False
-
-def init_database():
-
-    Base.metadata.create_all(
-        bind=engine
-    )
