@@ -2,7 +2,6 @@
 Schedulify Main Window
 
 Application shell responsible for:
-
 - Window initialization
 - Navigation container
 - Page switching
@@ -11,21 +10,18 @@ Application shell responsible for:
 Built using PySide6.
 """
 
-
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
     QHBoxLayout,
     QVBoxLayout,
-    QStackedWidget
+    QStackedWidget,
 )
 
 from PySide6.QtCore import QSize
 
-
 from ui.components.sidebar import Sidebar
 from ui.components.navbar import Navbar
-
 
 from ui.student.student_dashboard import StudentDashboard
 from ui.student.planner_view import PlannerView
@@ -33,13 +29,8 @@ from ui.student.calendar_view import CalendarView
 from ui.student.productivity_view import ProductivityView
 from ui.student.wellbeing_view import WellbeingView
 
-
 from ui.teacher.class_analytics import ClassAnalytics
 from ui.teacher.teacher_dashboard import TeacherDashboard
-
-
-from models.user import UserRole
-
 
 from ui.settings.settings_page import SettingsPage
 from ui.teacher.anonymous_reports import AnonymousReports
@@ -51,351 +42,175 @@ from controllers.analytics_controller import AnalyticsController
 from controllers.wellbeing_controller import WellBeingController
 from controllers.settings_controller import SettingsController
 
+from models.user import UserRole
 
-from Database.database import SessionLocal
-
+from api_client.auth_api import logout
 
 
 class MainWindow(QMainWindow):
 
-
-    def __init__(
-        self,
-        user=None,
-        theme_manager=None
-    ):
-
+    def __init__(self, user: dict = None, theme_manager=None):
         super().__init__()
 
-
-        self.user = user
-
+        self.user = user or {}
         self.theme_manager = theme_manager
 
-
-        self.setWindowTitle(
-            "Schedulify"
-        )
-
-
-        self.setMinimumSize(
-            QSize(
-                1200,
-                750
-            )
-        )
-
+        self.setWindowTitle("Schedulify")
+        self.setMinimumSize(QSize(1200, 750))
 
         self.setup_ui()
 
-
-
-    # -------------------------------------------------
-    # UI Setup
-    # -------------------------------------------------
-
-    def setup_ui(
-        self
-    ):
-
+    def setup_ui(self):
         container = QWidget()
+        self.setCentralWidget(container)
 
+        main_layout = QHBoxLayout(container)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        self.setCentralWidget(
-            container
+        # Determine role
+        role_str = self.user.get("role", "student")
+        role = (
+            UserRole.STUDENT
+            if role_str == "student"
+            else UserRole.TEACHER
         )
 
-
-        main_layout = QHBoxLayout(
-            container
-        )
-
-
-        main_layout.setContentsMargins(
-            0,
-            0,
-            0,
-            0
-        )
-
-
-        main_layout.setSpacing(
-            0
-        )
-
-
-        self.sidebar = Sidebar(
-            self.user.role
-        )
-
-
+        self.sidebar = Sidebar(role)
         self.navbar = Navbar(
-            self.user
+            self._make_user_for_navbar(),
         )
-
 
         self.pages = QStackedWidget()
+        self.load_pages(role)
 
-
-        self.load_pages()
-
-
-        main_layout.addWidget(
-            self.sidebar
-        )
-
+        main_layout.addWidget(self.sidebar)
 
         content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+        content_layout.addWidget(self.navbar)
+        content_layout.addWidget(self.pages)
 
-        content_layout.setContentsMargins(
-            0,
-            0,
-            0,
-            0
-        )
+        main_layout.addLayout(content_layout)
 
-        content_layout.setSpacing(
-            0
-        )
-
-        content_layout.addWidget(
-            self.navbar
-        )
-
-        content_layout.addWidget(
-            self.pages
-        )
-
-        main_layout.addLayout(
-            content_layout
-        )
-
-        self.connect_navigation()
-
+        self.sidebar.page_changed.connect(self.change_page)
+        self.sidebar.switch_user_requested.connect(self._handle_logout)
         self.change_page(0)
 
+    def _make_user_for_navbar(self):
+        """Create a simple object for the navbar to read name from."""
 
+        class _User:
+            pass
 
-    # -------------------------------------------------
-    # Load Application Pages
-    # -------------------------------------------------
+        u = _User()
+        u.first_name = self.user.get("first_name", "")
+        u.last_name = self.user.get("last_name", "")
+        return u
 
-    def load_pages(
-        self
-    ):
+    def load_pages(self, role: UserRole):
+        dashboard_controller = DashboardController()
+        settings_controller = SettingsController()
 
-        db = SessionLocal()
-
-
-        dashboard_controller = DashboardController(
-            db
-        )
-
-
-        settings_controller = SettingsController(
-            db
-        )
-
-
-        # -------------------------------------------------
-        # STUDENT
-        # -------------------------------------------------
-
-        if self.user.role == UserRole.STUDENT:
-
-            planner_controller = PlannerController(
-                db
-            )
-
-            calendar_controller = CalendarController(
-                db
-            )
-
-            analytics_controller = AnalyticsController(
-                db
-            )
-
-            wellbeing_controller = WellBeingController(
-                db
-            )
-
+        if role == UserRole.STUDENT:
+            planner_controller = PlannerController()
+            calendar_controller = CalendarController()
+            analytics_controller = AnalyticsController()
+            wellbeing_controller = WellBeingController()
 
             settings = SettingsPage(
                 settings_controller,
                 self.theme_manager,
-                self.user
+                self.user,
             )
+
+            student_id = self.user.get("profile", {})
+            if student_id and isinstance(student_id, dict):
+                student_id = student_id.get("id")
+            else:
+                student_id = self.user.get("id", 0)
 
             self.student_dashboard = StudentDashboard(
                 dashboard_controller,
-                self.user.student_profile
+                self.user,
             )
 
-
             pages = [
-
                 self.student_dashboard,
-
-                PlannerView(
-                    planner_controller,
-                    self.user.student_profile
-                ),
-
-                CalendarView(
-                    calendar_controller,
-                    self.user.student_profile
-                ),
-
-                ProductivityView(
-                    analytics_controller,
-                    self.user.student_profile
-                ),
-
-                WellbeingView(
-                    wellbeing_controller,
-                    self.user.student_profile
-                ),
-
-                settings
-
+                PlannerView(planner_controller, self.user),
+                CalendarView(calendar_controller, self.user),
+                ProductivityView(analytics_controller, self.user),
+                WellbeingView(wellbeing_controller, self.user),
+                settings,
             ]
 
-
-        # -------------------------------------------------
-        # TEACHER
-        # -------------------------------------------------
-
-        elif self.user.role == UserRole.TEACHER:
-
-            analytics_controller = AnalyticsController(db)
-
+        elif role == UserRole.TEACHER:
+            analytics_controller = AnalyticsController()
             pages = [
-
-                TeacherDashboard(
-                    dashboard_controller,
-                    self.user
-                ),
-                ClassAnalytics(
-                    analytics_controller,
-                    self.user
-                ),
-
-                AnonymousReports(
-                    analytics_controller,
-                    self.user
-                ),
-
-                SettingsPage(
-                    settings_controller,
-                    self.theme_manager,
-                    self.user
-                )
+                TeacherDashboard(dashboard_controller, self.user),
+                ClassAnalytics(analytics_controller, self.user),
+                AnonymousReports(analytics_controller, self.user),
+                SettingsPage(settings_controller, self.theme_manager, self.user),
             ]
-
-
-        # -------------------------------------------------
-        # UNKNOWN ROLE
-        # -------------------------------------------------
-
         else:
-
             pages = []
 
-
         for page in pages:
+            self.add_page(page)
 
-            self.add_page(
-                page
-            )
-
-
-
-    # -------------------------------------------------
-    # Navigation Handling
-    # -------------------------------------------------
-
-    def connect_navigation(
-        self
-    ):
-
-        self.sidebar.page_changed.connect(
-            self.change_page
-        )
-
-
-
-    def change_page(
-        self,
-        index: int
-    ):
-
+    def change_page(self, index: int):
         if 0 <= index < self.pages.count():
-
             self.pages.setCurrentIndex(index)
 
-            # -----------------------------------------
-            # Navbar Title
-            # -----------------------------------------
+            role_str = self.user.get("role", "student")
 
-            if self.user.role == UserRole.STUDENT:
-
+            if role_str == "student":
                 titles = [
-                    "Dashboard",
-                    "Planner",
-                    "Calendar",
-                    "Productivity",
-                    "Wellbeing",
-                    "Settings"
+                    "Dashboard", "Planner", "Calendar",
+                    "Productivity", "Wellbeing", "Settings",
                 ]
-
             else:
-
                 titles = [
-                    "Dashboard",
-                    "Class Analytics",
-                    "Anonymous Reports",
-                    "Settings"
+                    "Dashboard", "Class Analytics",
+                    "Anonymous Reports", "Settings",
                 ]
 
-            self.navbar.set_page_title(
-                titles[index]
-            )
+            if index < len(titles):
+                self.navbar.set_page_title(titles[index])
 
             current_page = self.pages.currentWidget()
-
-            if hasattr(
-                current_page,
-                "load_dashboard"
-            ):
-
+            if hasattr(current_page, "load_dashboard"):
                 current_page.load_dashboard()
 
+    def add_page(self, widget: QWidget):
+        self.pages.addWidget(widget)
 
+    def _handle_logout(self):
+        logout()
+        from api_client.client import clear_token
+        clear_token()
+        self.close()
 
-    # -------------------------------------------------
-    # Add Pages
-    # -------------------------------------------------
+        # Relaunch login
+        from ui.login.login_page import LoginPage
+        from controllers.auth_controller import AuthController
 
-    def add_page(
-        self,
-        widget: QWidget
-    ):
+        from PySide6.QtWidgets import QApplication
+        app = QApplication.instance()
 
-        self.pages.addWidget(
-            widget
-        )
+        auth_controller = AuthController()
+        login_page = LoginPage(auth_controller)
 
+        def open_main(user: dict):
+            global main_window
+            from ui.main_window import MainWindow as MW
+            main_window = MW(user, self.theme_manager)
+            main_window.show()
+            login_page.close()
 
+        login_page.login_successful.connect(open_main)
+        login_page.show()
 
-    # -------------------------------------------------
-    # Theme Support
-    # -------------------------------------------------
-
-    def apply_theme(
-        self,
-        stylesheet: str
-    ):
-
-        self.setStyleSheet(
-            stylesheet
-        )
+    def apply_theme(self, stylesheet: str):
+        self.setStyleSheet(stylesheet)

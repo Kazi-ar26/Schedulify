@@ -1,12 +1,6 @@
 from PyInstaller.utils.hooks import collect_submodules
 
 
-hiddenimports = collect_submodules("models") + [
-    "PySide6",
-    "sqlalchemy",
-]
-
-
 a = Analysis(
     ["main.py"],
     pathex=[],
@@ -15,10 +9,11 @@ a = Analysis(
         ("Assets", "Assets"),
         ("styles", "styles"),
         ("config.json", "."),
+        ("config.py", "."),
     ],
     hiddenimports=[
-    'passlib.handlers.bcrypt'
-    ],
+        'passlib.handlers.bcrypt',
+    ] + collect_submodules("models"),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

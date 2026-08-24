@@ -18,9 +18,7 @@ from models.student import Student
 from models.productivity import ProductivityRecord
 
 
-
 class WellbeingService:
-
 
 
     # -------------------------------------------------
@@ -33,44 +31,30 @@ class WellbeingService:
         student: Student
     ) -> str:
 
-
         statement = (
-
             select(
                 func.count(Task.id)
             )
-
             .where(
                 Task.student_id == student.id
             )
-
             .where(
                 Task.status != TaskStatus.COMPLETED
             )
-
         )
-
 
         pending_tasks = session.scalar(
             statement
         ) or 0
 
 
-
         if pending_tasks >= 10:
-
             return "HIGH"
 
-
-
         if pending_tasks >= 5:
-
             return "MEDIUM"
 
-
-
         return "LOW"
-
 
 
     # -------------------------------------------------
@@ -83,55 +67,34 @@ class WellbeingService:
         student: Student
     ) -> float:
 
-
         records = (
-
             session.scalars(
-
                 select(ProductivityRecord)
-
                 .where(
                     ProductivityRecord.student_id
                     == student.id
                 )
-
             )
-
             .all()
-
         )
 
-
         if not records:
-
             return 0.0
 
 
-
         active_days = len(
-
             [
-
                 record
-
                 for record in records
-
                 if record.focus_minutes > 0
-
             ]
-
         )
-
 
         return round(
-
             (active_days / len(records))
             * 100,
-
             2
-
         )
-
 
 
     # -------------------------------------------------
@@ -144,83 +107,78 @@ class WellbeingService:
         student: Student
     ) -> list[str]:
 
-
         recommendations = []
 
-
         workload = (
-
             WellbeingService
             .calculate_workload_level(
                 session,
                 student
             )
-
         )
 
-
         consistency = (
-
             WellbeingService
             .get_consistency_score(
                 session,
                 student
             )
-
         )
-
 
 
         if workload == "HIGH":
-
             recommendations.append(
-
-                "Consider breaking large tasks into smaller sessions."
-
+                "Consider breaking large tasks "
+                "into smaller sessions."
             )
-
-
 
         if consistency < 50:
-
             recommendations.append(
-
-                "Try maintaining a more consistent study routine."
-
+                "Try maintaining a more "
+                "consistent study routine."
             )
-
-
 
         if not recommendations:
-
             recommendations.append(
-
-                "Your current productivity balance looks stable."
-
+                "Your current productivity "
+                "balance looks stable."
             )
 
-
-
         return recommendations
+
+
+    # -------------------------------------------------
+    # Student Insights (used by WellBeingController)
+    # -------------------------------------------------
+
+    @staticmethod
     def generate_student_insights(
-        self,
-        session,
-        student
-    ):
+        session: Session,
+        student: Student
+    ) -> dict:
 
-        workload = self.calculate_workload_level(
-            session,
-            student
+        workload = (
+            WellbeingService
+            .calculate_workload_level(
+                session,
+                student
+            )
         )
 
-        consistency = self.get_consistency_score(
-            session,
-            student
+        consistency = (
+            WellbeingService
+            .get_consistency_score(
+                session,
+                student
+            )
         )
 
-        recommendations = self.generate_recommendations(
-            session,
-            student
+        recommendations = (
+            WellbeingService
+            .generate_recommendations(
+                session,
+                student
+            )
         )
 
         return {

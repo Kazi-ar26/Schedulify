@@ -19,9 +19,7 @@ from models.task import (
 )
 
 
-
 class SmartScheduler:
-
 
 
     def __init__(
@@ -31,9 +29,7 @@ class SmartScheduler:
     ):
 
         self.daily_start_hour = daily_start_hour
-
         self.daily_end_hour = daily_end_hour
-
 
 
     # -------------------------------------------------
@@ -61,7 +57,6 @@ class SmartScheduler:
             priority,
             1
         )
-
 
 
     # -------------------------------------------------
@@ -93,6 +88,26 @@ class SmartScheduler:
         )
 
 
+    # -------------------------------------------------
+    # Advance to next valid slot
+    # -------------------------------------------------
+
+    def _advance_to_next_day(
+        self,
+        current_time: datetime
+    ) -> datetime:
+        """Move to the start of the next working day."""
+
+        return (
+            current_time
+            + timedelta(days=1)
+        ).replace(
+            hour=self.daily_start_hour,
+            minute=0,
+            second=0,
+            microsecond=0
+        )
+
 
     # -------------------------------------------------
     # Generate Schedule
@@ -106,11 +121,9 @@ class SmartScheduler:
 
 
         prioritized_tasks = (
-
             self.prioritize_tasks(
                 tasks
             )
-
         )
 
 
@@ -134,64 +147,45 @@ class SmartScheduler:
 
 
             duration = timedelta(
-
                 minutes=task.estimated_duration
-
             )
-
 
             end_time = current_time + duration
 
 
-
-            # Move to next day if outside working hours
-
-            if end_time.hour > self.daily_end_hour:
-
+            # Loop until the task fits within working hours
+            while (
+                end_time.hour > self.daily_end_hour
+                or (
+                    end_time.hour == self.daily_end_hour
+                    and end_time.minute > 0
+                )
+            ):
 
                 current_time = (
-
-                    current_time
-                    + timedelta(days=1)
-
-                ).replace(
-
-                    hour=self.daily_start_hour,
-
-                    minute=0
-
+                    self._advance_to_next_day(
+                        current_time
+                    )
                 )
-
 
                 end_time = (
-                    current_time
-                    + duration
+                    current_time + duration
                 )
-
 
 
             generated_schedule.append({
-
                 "task": task,
-
                 "start_time": current_time,
-
                 "end_time": end_time,
-
                 "generated_by_ai": True
-
             })
 
-
             current_time = end_time + timedelta(
-
                 minutes=15
-
             )
 
 
         return generated_schedule
-
 
 
     # -------------------------------------------------
@@ -211,7 +205,6 @@ class SmartScheduler:
             schedules
         ):
 
-
             for other in schedules[index + 1:]:
 
 
@@ -224,8 +217,7 @@ class SmartScheduler:
                     and
 
                     current["end_time"]
-                    >
-                    other["start_time"]
+                    > other["start_time"]
 
                 ):
 
@@ -234,8 +226,7 @@ class SmartScheduler:
                         "first_task":
                             current["task"],
 
-                        "second_task":
-                            other["task"]
+                        "second_task": other["task"]
 
                     })
 

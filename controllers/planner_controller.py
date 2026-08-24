@@ -1,76 +1,31 @@
 """
 Schedulify Planner Controller
 
-Handles:
-- Task planning
-- Schedule generation
-- Automatic scheduling
-- Rescheduling workflows
-
-Connects:
-UI → Controller → Services → AI Engine
+Handles task planning and schedule generation via the backend API.
 """
-
 
 from datetime import datetime
 
-
-from sqlalchemy.orm import Session
-
-
-from models.student import Student
-from models.task import Task
-
-
-from services.task_service import TaskService
-from services.scheduler_service import SchedulerService
-
-
-from ai_engine.smart_scheduler import SmartScheduler
-from ai_engine.rescheduler import Rescheduler
-
+from api_client.tasks_api import list_tasks, create_task as api_create_task
+from api_client.schedules_api import generate_schedule, list_schedules
+from api_client.client import APIError
 
 
 class PlannerController:
 
-
-
-    def __init__(
-        self,
-        session: Session
-    ):
-
+    def __init__(self, session=None):
         self.session = session
-
-        self.task_service = TaskService()
-
-        self.scheduler_service = SchedulerService()
-
-        self.smart_scheduler = SmartScheduler()
-
-        self.rescheduler = Rescheduler()
-
-
 
     # -------------------------------------------------
     # Task Retrieval
     # -------------------------------------------------
 
-    def get_student_tasks(
-        self,
-        student: Student
-    ) -> list[Task]:
-
-
-        return (
-
-            self.task_service
-            .get_student_tasks(
-                self.session,
-                student
-            )
-
-        )
+    def get_student_tasks(self, student_id: int = None) -> list[dict]:
+        """List all tasks via API."""
+        try:
+            return list_tasks()
+        except APIError:
+            return []
 
     # -------------------------------------------------
     # Create Task
@@ -78,194 +33,54 @@ class PlannerController:
 
     def create_task(
         self,
-        student: Student,
+        student_id: int = None,
         *,
         title: str,
-        description: str | None = None,
-        category: str | None = None,
+        description: str = None,
+        category: str = None,
         priority=None,
         estimated_duration: int = 60,
-        due_date: datetime | None = None
-    ) -> Task:
+        due_date: datetime = None,
+    ) -> dict:
+        """Create a task via API."""
+        priority_str = "medium"
+        if priority is not None:
+            if hasattr(priority, "value"):
+                priority_str = priority.value
+            elif isinstance(priority, str):
+                priority_str = priority
 
+        due_str = None
+        if due_date is not None:
+            if isinstance(due_date, datetime):
+                due_str = due_date.isoformat()
+            else:
+                due_str = str(due_date)
 
-        return (
-
-            self.task_service
-            .create_task(
-                self.session,
-
-                student=student,
-
-                title=title,
-
-                description=description,
-
-                category=category,
-
-                priority=priority,
-
-                estimated_duration=estimated_duration,
-
-                due_date=due_date
-
-            )
-
+        return api_create_task(
+            title=title,
+            description=description,
+            category=category,
+            priority=priority_str,
+            estimated_duration=estimated_duration,
+            due_date=due_str,
         )
-
 
     # -------------------------------------------------
     # Generate AI Schedule
     # -------------------------------------------------
 
-    def generate_schedule(
-        self,
-        student: Student,
-        start_date: datetime
-    ) -> list[dict]:
-
-
-        tasks = (
-
-            self.task_service
-            .get_unscheduled_tasks(
-                self.session,
-                student
-            )
-
-        )
-
-
-        schedule_plan = (
-
-            self.smart_scheduler
-            .generate_schedule(
-                tasks,
-                start_date
-            )
-
-        )
-
-
-        return schedule_plan
-
-
+    def generate_schedule(self, student_id: int = None) -> list[dict]:
+        """Generate an AI schedule via API."""
+        return generate_schedule()
 
     # -------------------------------------------------
-    # Save Generated Schedule
+    # Get Schedules
     # -------------------------------------------------
 
-    def save_schedule(
-        self,
-        student: Student,
-        schedule_plan: list[dict]
-    ):
-
-
-        created = []
-
-
-        for item in schedule_plan:
-
-
-            schedule = (
-
-                self.scheduler_service
-                .create_schedule(
-                    self.session,
-
-                    student=student,
-
-                    task=item["task"],
-
-                    scheduled_date=item["start_time"].date(),
-
-                    start_time=item["start_time"],
-
-                    end_time=item["end_time"],
-
-                    generated_by_ai=True
-
-                )
-
-            )
-
-
-            created.append(schedule)
-
-
-
-        return created
-
-
-
-    # -------------------------------------------------
-    # Reschedule Missed Tasks
-    # -------------------------------------------------
-
-    def reschedule_tasks(
-        self,
-        student: Student,
-        current_time: datetime
-    ) -> list[dict]:
-
-
-        missed_tasks = (
-
-            self.task_service
-            .get_missed_tasks(
-                self.session,
-                student
-            )
-
-        )
-
-
-        existing_schedule = (
-
-            self.scheduler_service
-            .get_student_schedule(
-                self.session,
-                student
-            )
-
-        )
-
-
-        return (
-
-            self.rescheduler
-            .reschedule_multiple_tasks(
-                missed_tasks,
-
-                existing_schedule,
-
-                current_time
-
-            )
-
-        )
-
-
-
-    # -------------------------------------------------
-    # Daily Planner Data
-    # -------------------------------------------------
-
-    def get_daily_plan(
-        self,
-        student: Student,
-        date
-    ):
-
-
-        return (
-
-            self.scheduler_service
-            .get_daily_schedule(
-                self.session,
-                student,
-                date
-            )
-
-        )
+    def get_schedules(self, student_id: int = None) -> list[dict]:
+        """Get all schedules via API."""
+        try:
+            return list_schedules()
+        except APIError:
+            return []

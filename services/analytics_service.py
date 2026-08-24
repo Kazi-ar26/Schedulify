@@ -18,7 +18,6 @@ from models.productivity import ProductivityRecord
 from models.analytics import AnalyticsRecord
 
 
-
 class AnalyticsService:
 
 
@@ -39,19 +38,12 @@ class AnalyticsService:
 
 
         record = ProductivityRecord(
-
             student_id=student.id,
-
             date=date.today(),
-
             focus_minutes=focus_minutes,
-
             completed_tasks=completed_tasks,
-
             missed_tasks=missed_tasks,
-
             notes=notes
-
         )
 
 
@@ -59,14 +51,11 @@ class AnalyticsService:
 
 
         session.add(record)
-
         session.commit()
-
         session.refresh(record)
 
 
         return record
-
 
 
     # -------------------------------------------------
@@ -81,17 +70,14 @@ class AnalyticsService:
 
 
         statement = (
-
             select(ProductivityRecord)
-
             .where(
-                ProductivityRecord.student_id == student.id
+                ProductivityRecord.student_id
+                == student.id
             )
-
             .order_by(
                 ProductivityRecord.date.desc()
             )
-
         )
 
 
@@ -100,14 +86,17 @@ class AnalyticsService:
         )
 
 
-
     @staticmethod
     def generate_student_summary(
         session: Session,
         student: Student
     ) -> dict:
+        """
+        Generates a proper summary aggregating across ALL
+        productivity records, not just the latest one.
+        """
 
-        # Get total number of tasks
+        # Total tasks
         total = session.scalar(
             select(func.count(Task.id))
             .where(
@@ -115,27 +104,81 @@ class AnalyticsService:
             )
         ) or 0
 
-        # Get latest productivity record
-        latest_record = session.scalar(
-            select(ProductivityRecord)
+        # Completed tasks (from task table)
+        completed = session.scalar(
+            select(func.count(Task.id))
             .where(
-                ProductivityRecord.student_id == student.id
+                Task.student_id == student.id
             )
-            .order_by(
-                ProductivityRecord.date.desc()
+            .where(
+                Task.status == TaskStatus.COMPLETED
             )
-        )
+        ) or 0
 
-        if latest_record:
+        # Missed tasks (from task table)
+        missed = session.scalar(
+            select(func.count(Task.id))
+            .where(
+                Task.student_id == student.id
+            )
+            .where(
+                Task.status == TaskStatus.MISSED
+            )
+        ) or 0
 
-            completed = latest_record.completed_tasks
+        # Aggregate productivity records
+        total_focus = session.scalar(
+            select(
+                func.coalesce(
+                    func.sum(
+                        ProductivityRecord.focus_minutes
+                    ),
+                    0
+                )
+            )
+            .where(
+                ProductivityRecord.student_id
+                == student.id
+            )
+        ) or 0
 
-            missed = latest_record.missed_tasks
+        total_recorded_completed = session.scalar(
+            select(
+                func.coalesce(
+                    func.sum(
+                        ProductivityRecord.completed_tasks
+                    ),
+                    0
+                )
+            )
+            .where(
+                ProductivityRecord.student_id
+                == student.id
+            )
+        ) or 0
 
-        else:
+        total_recorded_missed = session.scalar(
+            select(
+                func.coalesce(
+                    func.sum(
+                        ProductivityRecord.missed_tasks
+                    ),
+                    0
+                )
+            )
+            .where(
+                ProductivityRecord.student_id
+                == student.id
+            )
+        ) or 0
 
-            completed = 0
-            missed = 0
+        record_count = session.scalar(
+            select(func.count(ProductivityRecord.id))
+            .where(
+                ProductivityRecord.student_id
+                == student.id
+            )
+        ) or 0
 
         completion_rate = (
             (completed / total) * 100
@@ -143,21 +186,25 @@ class AnalyticsService:
             else 0
         )
 
+        avg_focus = (
+            total_focus / record_count
+            if record_count > 0
+            else 0
+        )
+
         return {
-
             "total_tasks": total,
-
             "completed_tasks": completed,
-
             "missed_tasks": missed,
-
             "completion_rate": round(
-                completion_rate,
-                2
-            )
-
+                completion_rate, 2
+            ),
+            "total_focus_minutes": total_focus,
+            "average_focus_minutes": round(
+                avg_focus, 1
+            ),
+            "productivity_records": record_count
         }
-
 
 
     # -------------------------------------------------
@@ -176,17 +223,11 @@ class AnalyticsService:
 
 
         record = AnalyticsRecord(
-
             student_id=student.id,
-
             record_date=date.today(),
-
             completion_rate=completion_rate,
-
             average_focus_time=average_focus_time,
-
             workload_score=workload_score
-
         )
 
 
@@ -194,14 +235,11 @@ class AnalyticsService:
 
 
         session.add(record)
-
         session.commit()
-
         session.refresh(record)
 
 
         return record
-
 
 
     # -------------------------------------------------
@@ -215,42 +253,28 @@ class AnalyticsService:
 
 
         total_students = (
-
             session.scalar(
-
                 select(
                     func.count(Student.id)
                 )
-
             )
-
         )
 
-
         average_completion = (
-
             session.scalar(
-
                 select(
                     func.avg(
                         AnalyticsRecord.completion_rate
                     )
                 )
-
             )
-
         )
 
-
         return {
-
             "total_students": total_students or 0,
-
             "average_completion_rate":
-
                 round(
                     average_completion or 0,
                     2
                 )
-
         }

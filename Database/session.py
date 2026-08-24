@@ -3,8 +3,8 @@ Schedulify Database Session Manager
 
 Handles:
 - Creating database sessions
-- Managing transactions
-- Commit / rollback operations
+- Context-managed sessions with auto-commit/rollback
+- Transaction helpers
 - Safe database interaction
 """
 
@@ -14,30 +14,6 @@ from contextlib import contextmanager
 from sqlalchemy.exc import SQLAlchemyError
 
 from Database.database import SessionLocal
-
-
-
-# -------------------------------------------------
-# Session Generator
-# -------------------------------------------------
-
-def create_session():
-    """
-    Creates and returns a SQLAlchemy database session.
-
-    Used when manual session control is required.
-
-    Example:
-
-        session = create_session()
-
-        users = session.query(User).all()
-
-        session.close()
-    """
-
-    return SessionLocal()
-
 
 
 # -------------------------------------------------
@@ -51,42 +27,63 @@ def database_session():
 
     Automatically:
     - Opens session
-    - Commits changes
+    - Commits on success
     - Rolls back on errors
-    - Closes connection
+    - Closes session in all cases
 
     Example:
 
         with database_session() as session:
-
             session.add(user)
-
     """
 
     session = SessionLocal()
 
     try:
-
         yield session
-
         session.commit()
 
-
     except SQLAlchemyError as error:
-
         session.rollback()
-
         logging.error(
             f"Database transaction failed: {error}"
         )
-
         raise
 
-
     finally:
-
         session.close()
 
+
+# -------------------------------------------------
+# Read-only Session (no auto-commit)
+# -------------------------------------------------
+
+@contextmanager
+def readonly_session():
+    """
+    Provides a read-only database session.
+
+    Does NOT auto-commit — use for queries only.
+
+    Example:
+
+        with readonly_session() as session:
+            users = session.query(User).all()
+    """
+
+    session = SessionLocal()
+
+    try:
+        yield session
+
+    except SQLAlchemyError as error:
+        logging.error(
+            f"Database read failed: {error}"
+        )
+        raise
+
+    finally:
+        session.close()
 
 
 # -------------------------------------------------
@@ -94,28 +91,17 @@ def database_session():
 # -------------------------------------------------
 
 def commit_transaction(session):
-    """
-    Commits active database changes.
-
-    Used when explicit transaction control
-    is required.
-    """
+    """Commits active database changes."""
 
     try:
-
         session.commit()
 
-
     except SQLAlchemyError as error:
-
         session.rollback()
-
         logging.error(
             f"Commit failed: {error}"
         )
-
         raise
-
 
 
 # -------------------------------------------------
@@ -123,19 +109,13 @@ def commit_transaction(session):
 # -------------------------------------------------
 
 def rollback_transaction(session):
-    """
-    Cancels pending database changes.
-    """
+    """Cancels pending database changes."""
 
     try:
-
         session.rollback()
 
-
     except SQLAlchemyError as error:
-
         logging.error(
             f"Rollback failed: {error}"
         )
-
         raise

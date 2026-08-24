@@ -11,13 +11,10 @@ Database updates are handled by services.
 
 
 from datetime import datetime, timedelta
-
 from models.task import Task
 
 
-
 class Rescheduler:
-
 
 
     def __init__(
@@ -27,9 +24,7 @@ class Rescheduler:
     ):
 
         self.working_start_hour = working_start_hour
-
         self.working_end_hour = working_end_hour
-
 
 
     # -------------------------------------------------
@@ -41,13 +36,9 @@ class Rescheduler:
         task: Task
     ) -> timedelta:
 
-
         return timedelta(
-
             minutes=task.estimated_duration
-
         )
-
 
 
     # -------------------------------------------------
@@ -61,17 +52,11 @@ class Rescheduler:
         start_from: datetime
     ) -> dict | None:
 
-
         current_time = start_from.replace(
-
             hour=self.working_start_hour,
-
             minute=0,
-
             second=0,
-
             microsecond=0
-
         )
 
 
@@ -79,44 +64,60 @@ class Rescheduler:
             task
         )
 
-
         search_until = start_from + timedelta(days=7)
-
         while current_time <= search_until:
-
 
             end_time = current_time + duration
 
 
+            # Skip slots outside working hours
+            if (
+                current_time.hour
+                < self.working_start_hour
+            ):
+
+                # Jump to start of next working day
+                current_time = (
+                    current_time + timedelta(days=1)
+                ).replace(
+                    hour=self.working_start_hour,
+                    minute=0,
+                    second=0,
+                    microsecond=0
+                )
+
+                end_time = current_time + duration
+                continue
+
 
             if end_time.hour <= self.working_end_hour:
 
-
                 conflict = False
-
 
 
                 for schedule in existing_schedules:
 
                     if isinstance(schedule, dict):
-
-                        schedule_start = schedule["start_time"]
-                        schedule_end = schedule["end_time"]
-
+                        schedule_start = (
+                            schedule["start_time"]
+                        )
+                        schedule_end = (
+                            schedule["end_time"]
+                        )
                     else:
-
-                        schedule_start = schedule.start_time
-                        schedule_end = schedule.end_time
+                        schedule_start = (
+                            schedule.start_time
+                        )
+                        schedule_end = (
+                            schedule.end_time
+                        )
 
                     if (
                         current_time < schedule_end
                         and end_time > schedule_start
                     ):
-
                         conflict = True
-
                         break
-
 
 
                 if not conflict:
@@ -136,7 +137,6 @@ class Rescheduler:
                     }
 
 
-
             current_time += timedelta(
 
                 minutes=30
@@ -144,9 +144,7 @@ class Rescheduler:
             )
 
 
-
         return None
-
 
 
     # -------------------------------------------------
@@ -160,17 +158,11 @@ class Rescheduler:
         current_time: datetime
     ) -> dict | None:
 
-
         return self.find_available_slot(
-
             existing_schedules,
-
             task,
-
             current_time
-
         )
-
 
 
     # -------------------------------------------------
@@ -184,9 +176,7 @@ class Rescheduler:
         current_time: datetime
     ) -> list[dict]:
 
-
         suggestions = []
-
 
 
         for task in tasks:
@@ -207,13 +197,11 @@ class Rescheduler:
             )
 
 
-
             if suggestion:
 
 
                 suggestions.append(
                     suggestion
                 )
-
 
         return suggestions

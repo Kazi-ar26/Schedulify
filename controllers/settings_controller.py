@@ -1,187 +1,47 @@
 """
 Schedulify Settings Controller
 
-Handles:
-
-- User settings management
-- Theme preferences
-- Application preferences
-
-Connects:
-UI → Controller → SettingsService
+Handles settings via the backend API.
 """
 
-from sqlalchemy.orm import Session
-
-from models.user import User
-from models.setting import Setting
-
-from services.settings_service import SettingsService
+from api_client.settings_api import get_settings, update_settings
+from api_client.client import APIError
 
 
 class SettingsController:
 
-    def __init__(
-        self,
-        session: Session
-    ):
-
+    def __init__(self, session=None):
         self.session = session
 
-        self.settings_service = SettingsService()
+    def get_settings(self, user_id: int = None) -> dict:
+        """Get user settings via API."""
+        try:
+            return get_settings()
+        except APIError:
+            return {
+                "dark_mode": True,
+                "notifications_enabled": True,
+                "auto_reschedule": True,
+                "default_study_duration": 60,
+            }
 
+    def save_settings(self, user_id: int = None, settings_data: dict = None) -> dict:
+        """Save settings via API."""
+        if settings_data is None:
+            settings_data = {}
 
-    # -------------------------------------------------
-    # Get User Settings
-    # -------------------------------------------------
-
-    def get_settings(
-        self,
-        user: User
-    ) -> Setting:
-
-        settings = (
-
-            self.settings_service
-            .get_user_settings(
-                self.session,
-                user
+        update_kwargs = {}
+        if "theme" in settings_data:
+            update_kwargs["dark_mode"] = (
+                settings_data["theme"].lower() == "dark"
             )
+        if "notifications" in settings_data:
+            update_kwargs["notifications_enabled"] = settings_data["notifications"]
 
-        )
+        return update_settings(**update_kwargs)
 
-        # Create settings if this user doesn't have any yet
-        if settings is None:
+    def update_theme(self, user_id: int = None, theme: str = "dark") -> dict:
+        return update_settings(dark_mode=(theme.lower() == "dark"))
 
-            settings = (
-
-                self.settings_service
-                .create_default_settings(
-                    self.session,
-                    user
-                )
-
-            )
-
-        return settings
-
-
-    # -------------------------------------------------
-    # Update All Settings
-    # -------------------------------------------------
-
-    def save_settings(
-        self,
-        user: User,
-        settings_data: dict
-    ) -> Setting:
-
-        settings = self.get_settings(
-            user
-        )
-
-        theme = settings_data.get(
-            "theme",
-            "dark"
-        )
-
-        notifications = settings_data.get(
-            "notifications",
-            True
-        )
-
-        dark_mode = (
-            theme.lower() == "dark"
-        )
-
-        return (
-            self.settings_service
-            .update_settings(
-                self.session,
-                settings,
-                dark_mode=dark_mode,
-                notifications_enabled=notifications
-            )
-        )
-
-
-    # -------------------------------------------------
-    # Update Theme
-    # -------------------------------------------------
-
-    def update_theme(
-        self,
-        user: User,
-        theme: str
-    ) -> Setting:
-
-        settings = self.get_settings(
-            user
-        )
-
-        dark_mode = (
-            theme.lower() == "dark"
-        )
-
-        return (
-
-            self.settings_service
-            .update_settings(
-                self.session,
-                settings,
-                dark_mode=dark_mode
-            )
-
-        )
-
-
-    # -------------------------------------------------
-    # Update Notifications
-    # -------------------------------------------------
-
-    def update_notifications(
-        self,
-        user: User,
-        enabled: bool
-    ) -> Setting:
-
-        settings = self.get_settings(
-            user
-        )
-
-        return (
-
-            self.settings_service
-            .update_settings(
-                self.session,
-                settings,
-                notifications_enabled=enabled
-            )
-
-        )
-
-
-    # -------------------------------------------------
-    # Update General Preferences
-    # -------------------------------------------------
-
-    def update_preferences(
-        self,
-        user: User,
-        preferences: dict
-    ) -> Setting:
-
-        settings = self.get_settings(
-            user
-        )
-
-        return (
-
-            self.settings_service
-            .update_settings(
-                self.session,
-                settings,
-                **preferences
-            )
-
-        )
+    def update_notifications(self, user_id: int = None, enabled: bool = True) -> dict:
+        return update_settings(notifications_enabled=enabled)

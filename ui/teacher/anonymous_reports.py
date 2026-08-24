@@ -1,202 +1,177 @@
 """
 Schedulify Anonymous Reports View
 
-Handles:
-- Privacy-safe teacher reports
-- Aggregated student insights
-- Anonymous analytics display
-
-Connects:
-UI → AnalyticsController
+Displays privacy-safe aggregated student insights.
+No individual student data is exposed.
 """
-
 
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
+    QHBoxLayout,
     QLabel,
-    QListWidget,
+    QFrame,
+    QScrollArea,
     QPushButton,
-    QMessageBox
 )
 
+from PySide6.QtGui import QFont
 
 from controllers.analytics_controller import AnalyticsController
 
 
-
 class AnonymousReports(QWidget):
 
-
-
-    def __init__(
-        self,
-        analytics_controller: AnalyticsController,
-        user
-    ):
-
+    def __init__(self, analytics_controller: AnalyticsController, user: dict):
         super().__init__()
-
-
         self.analytics_controller = analytics_controller
-
         self.user = user
-
-
         self.setup_ui()
-
-
         self.load_reports()
 
+    def setup_ui(self):
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(32, 24, 32, 24)
+        layout.setSpacing(16)
 
-    # -------------------------------------------------
-    # UI Setup
-    # -------------------------------------------------
+        title = QLabel("Anonymous Student Reports")
+        title.setFont(QFont("Segoe UI", 24, QFont.Weight.Bold))
+        title.setStyleSheet("color: white;")
+        layout.addWidget(title)
 
-    def setup_ui(
-        self
-    ):
-
-
-        layout = QVBoxLayout()
-
-
-
-        self.title = QLabel(
-            "Anonymous Student Reports"
+        privacy_note = QLabel(
+            "🔒 All data shown here is aggregated and anonymized. "
+            "No individual student information is displayed."
         )
-
-
-        self.description = QLabel(
-
-            "Reports contain aggregated insights "
-            "to protect student privacy."
-
+        privacy_note.setStyleSheet(
+            "color: #9AA2B1; font-size: 13px; padding: 8px 12px; "
+            "background: #171B24; border-radius: 8px; border: 1px solid #252B38;"
         )
+        privacy_note.setWordWrap(True)
+        layout.addWidget(privacy_note)
 
+        # Summary cards
+        cards_layout = QHBoxLayout()
+        cards_layout.setSpacing(12)
 
+        self.card_students = self._create_card("Students", "0")
+        self.card_tasks = self._create_card("Tasks Created", "0")
+        self.card_completed = self._create_card("Tasks Done", "0")
+        self.card_focus = self._create_card("Avg Focus", "0 min")
 
-        self.refresh_button = QPushButton(
-            "Generate Report"
-        )
+        for card in [self.card_students, self.card_tasks, self.card_completed, self.card_focus]:
+            cards_layout.addWidget(card)
 
+        layout.addLayout(cards_layout)
 
-        self.refresh_button.clicked.connect(
-            self.load_reports
-        )
+        # Insight section
+        insight_frame = QFrame()
+        insight_frame.setStyleSheet("""
+            QFrame {
+                background: #171B24;
+                border: 1px solid #252B38;
+                border-radius: 14px;
+                padding: 20px;
+            }
+        """)
+        insight_layout = QVBoxLayout(insight_frame)
 
+        insight_title = QLabel("Class Insights")
+        insight_title.setStyleSheet("color: white; font-size: 16px; font-weight: 600;")
+        insight_layout.addWidget(insight_title)
 
+        self.insight_label = QLabel("Loading...")
+        self.insight_label.setStyleSheet("color: #9AA2B1; font-size: 14px; padding: 8px 0;")
+        self.insight_label.setWordWrap(True)
+        insight_layout.addWidget(self.insight_label)
 
-        self.report_list = QListWidget()
+        layout.addWidget(insight_frame)
 
+        # Refresh
+        self.refresh_button = QPushButton("Refresh Report")
+        self.refresh_button.setMinimumHeight(40)
+        self.refresh_button.setStyleSheet("""
+            QPushButton {
+                background: #FFC107;
+                color: #111111;
+                border: none;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            QPushButton:hover { background: #FFB300; }
+        """)
+        self.refresh_button.clicked.connect(self.load_reports)
+        layout.addWidget(self.refresh_button)
 
+        layout.addStretch()
+        scroll.setWidget(content)
 
-        widgets = [
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.addWidget(scroll)
 
-            self.title,
-
-            self.description,
-
-            self.report_list,
-
-            self.refresh_button
-
-        ]
-
-
-
-        for widget in widgets:
-
-            layout.addWidget(
-                widget
-            )
-
-
-
-        self.setLayout(
-            layout
-        )
-
-
-
-    # -------------------------------------------------
-    # Load Reports
-    # -------------------------------------------------
-
-    def load_reports(
-        self
-    ):
-
-
+    def load_reports(self):
         try:
+            data = self.analytics_controller.get_teacher_analytics()
+        except Exception:
+            return
 
+        stats = data.get("statistics", {})
 
-            reports = (
+        students = stats.get("total_students", 0)
+        tasks = stats.get("total_tasks", 0)
+        completed = stats.get("completed_tasks", 0)
+        rate = stats.get("average_completion_rate", 0)
+        focus = stats.get("average_focus_minutes", 0)
 
-                self.analytics_controller
-                .get_teacher_analytics(
-                    self.user
-                )
+        self.card_students.findChild(QLabel, "cardValue").setText(str(students))
+        self.card_tasks.findChild(QLabel, "cardValue").setText(str(tasks))
+        self.card_completed.findChild(QLabel, "cardValue").setText(str(completed))
+        self.card_focus.findChild(QLabel, "cardValue").setText(f"{focus:.0f} min")
 
+        if students == 0:
+            self.insight_label.setText(
+                "No aggregated data available yet.\n"
+                "Data will appear once students start using the platform."
             )
-
-
-            self.display_reports(
-                reports
-            )
-
-
-
-        except Exception as error:
-
-
-            QMessageBox.critical(
-
-                self,
-
-                "Report Error",
-
-                str(error)
-
-            )
-
-
-
-    # -------------------------------------------------
-    # Display Reports
-    # -------------------------------------------------
-
-    def display_reports(
-        self,
-        reports
-    ):
-
-
-        self.report_list.clear()
-
-
-
-        if isinstance(
-            reports,
-            dict
-        ):
-
-
-            for key, value in reports.items():
-
-                self.report_list.addItem(
-
-                    f"{key}: {value}"
-
-                )
-
-
         else:
+            parts = []
+            parts.append(f"📊 {students} students are actively using Schedulify.")
+            parts.append(f"📝 {tasks} tasks have been created across the class.")
 
+            if completed > 0:
+                parts.append(f"✅ {completed} tasks have been completed ({rate:.1f}% completion rate).")
 
-            self.report_list.addItem(
+            if focus > 0:
+                parts.append(f"⏱️ Average focus time per session: {focus:.0f} minutes.")
 
-                str(reports)
+            self.insight_label.setText("\n\n".join(parts))
 
-            )
+    @staticmethod
+    def _create_card(title: str, value: str) -> QFrame:
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame {
+                background: #171B24;
+                border: 1px solid #252B38;
+                border-radius: 14px;
+                padding: 16px;
+            }
+        """)
+        layout = QVBoxLayout(card)
+        layout.setSpacing(6)
+        t = QLabel(title)
+        t.setStyleSheet("color: #9AA2B1; font-size: 12px; font-weight: 500;")
+        layout.addWidget(t)
+        v = QLabel(value)
+        v.setObjectName("cardValue")
+        v.setStyleSheet("color: white; font-size: 24px; font-weight: 700;")
+        layout.addWidget(v)
+        return card

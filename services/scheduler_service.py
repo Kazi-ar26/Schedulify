@@ -10,7 +10,7 @@ Responsible for:
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, func, and_
 from sqlalchemy.orm import Session
 
 from models.schedule import (
@@ -93,17 +93,12 @@ class SchedulerService:
         session.add(schedule)
 
         try:
-
             session.commit()
-
             session.refresh(schedule)
-
             return schedule
 
         except Exception:
-
             session.rollback()
-
             raise
 
     # -------------------------------------------------
@@ -150,22 +145,27 @@ class SchedulerService:
         target_date: date
     ) -> list[Schedule]:
 
+        """
+        Returns schedules for a specific date.
+
+        Uses SQL filtering instead of loading all records.
+        """
+
         statement = (
             select(Schedule)
             .where(
                 Schedule.student_id == student.id
             )
+            .where(
+                func.date(Schedule.scheduled_date)
+                == target_date
+            )
+            .order_by(Schedule.start_time)
         )
 
-        schedules = list(
+        return list(
             session.scalars(statement).all()
         )
-
-        return [
-            schedule
-            for schedule in schedules
-            if schedule.scheduled_date.date() == target_date
-        ]
 
     @staticmethod
     def get_today_schedule(
@@ -198,12 +198,7 @@ class SchedulerService:
                 )
 
             if hasattr(schedule, key):
-
-                setattr(
-                    schedule,
-                    key,
-                    value
-                )
+                setattr(schedule, key, value)
 
         session.commit()
         session.refresh(schedule)
@@ -265,5 +260,4 @@ class SchedulerService:
     ) -> None:
 
         session.delete(schedule)
-
         session.commit()

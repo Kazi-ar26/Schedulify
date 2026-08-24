@@ -16,7 +16,6 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from models import user
 from models.user import User, UserRole
 from models.student import Student
 from models.teacher import Teacher
@@ -29,13 +28,9 @@ class AuthenticationService:
     """
 
     _password_context = CryptContext(
-
         schemes=["bcrypt"],
-
         deprecated="auto"
-
     )
-
 
 
     # -------------------------------------------------
@@ -52,7 +47,6 @@ class AuthenticationService:
             password
         )
 
-
     @classmethod
     def verify_password(
         cls,
@@ -61,13 +55,9 @@ class AuthenticationService:
     ) -> bool:
 
         return cls._password_context.verify(
-
             password,
-
             password_hash
-
         )
-
 
 
     # -------------------------------------------------
@@ -81,14 +71,13 @@ class AuthenticationService:
         email: str
     ) -> Optional[User]:
 
-        statement=select(User).where(
+        statement = select(User).where(
             User.email == email
         )
 
         result = session.execute(statement)
 
         return result.scalar_one_or_none()
-
 
 
     # -------------------------------------------------
@@ -104,36 +93,23 @@ class AuthenticationService:
     ) -> Optional[User]:
 
         user = cls.get_user_by_email(
-
             session,
             email
-
         )
 
-
         if user is None:
-
             return None
-
 
         if not user.is_active:
-
             return None
-
 
         if not cls.verify_password(
-
             password,
-
             user.password_hash
-
         ):
-
             return None
 
-
         return user
-
 
 
     # -------------------------------------------------
@@ -159,62 +135,41 @@ class AuthenticationService:
 
         if existing_user is not None:
             raise ValueError(
-                "Email is already registered."
+                "An account with this email "
+                "already exists."
             )
 
-
         user = User(
-
             email=email,
-
             password_hash=cls.hash_password(
                 password
             ),
-
             first_name=first_name,
-
             last_name=last_name,
-
             role=role,
-
             is_active=True
-
         )
 
-
         session.add(user)
-
         session.flush()
 
-
         if role == UserRole.STUDENT:
-
-            student = Student(
-                user_id=user.id
-            )
-
+            student = Student(user_id=user.id)
             session.add(student)
 
-
         elif role == UserRole.TEACHER:
-
-            teacher = Teacher(
-                user_id=user.id
-            )
-
+            teacher = Teacher(user_id=user.id)
             session.add(teacher)
 
         try:
-
             session.commit()
-
             session.refresh(user)
 
         except IntegrityError:
-
             session.rollback()
-
-            raise
-
+            raise ValueError(
+                "An account with this email "
+                "already exists."
+            )
 
         return user
