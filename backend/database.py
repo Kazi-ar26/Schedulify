@@ -8,10 +8,13 @@ reusing the same ORM models defined in models/.
 import os
 import logging
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from Database.database import Base
+
+load_dotenv()
 
 
 # -------------------------------------------------
