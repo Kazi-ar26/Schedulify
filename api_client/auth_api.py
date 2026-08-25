@@ -33,9 +33,10 @@ def register(
 
     result = client.post("/api/auth/register", data)
 
-    # Save token
+    # Save token to disk AND update the in-memory singleton
     if result and "access_token" in result:
         save_token(result["access_token"], result.get("user", {}))
+        client.set_token(result["access_token"])
 
     return result
 
@@ -49,9 +50,10 @@ def login(email: str, password: str) -> dict:
         "password": password,
     })
 
-    # Save token
+    # Save token to disk AND update the in-memory singleton
     if result and "access_token" in result:
         save_token(result["access_token"], result.get("user", {}))
+        client.set_token(result["access_token"])
 
     return result
 
@@ -59,6 +61,8 @@ def login(email: str, password: str) -> dict:
 def logout():
     """Clear local auth state."""
     from api_client.client import clear_token
+    client = get_client()
+    client.clear_auth()
     clear_token()
 
 
