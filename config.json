@@ -7,10 +7,10 @@
     },
 
     "api": {
-        "base_url": "http://localhost:8000",
+        "base_url": "https://schedulify-ridf.onrender.com",
         "timeout_seconds": 30
     },
-
+    
     "database": {
         "type": "sqlite",
         "driver": "pysqlite",

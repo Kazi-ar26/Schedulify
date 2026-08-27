@@ -1,4 +1,4 @@
-# ✦ Schedulify v2.0
+# ✦ Schedulify Beta v1.5
 
 > **Intelligent academic planning and productivity management for students.**
 
@@ -19,7 +19,7 @@ PostgreSQL (Supabase)
 ```
 
 ```
-Schedulify v2.0
+Schedulify Beta v1.5
 │
 ├── backend/              # FastAPI REST API
 │   ├── main.py           # Application entry point
@@ -326,6 +326,6 @@ This project is developed as an educational software project.
 ---
 
 <p align="center">
-  <strong>✦ Schedulify v2.0</strong><br>
+  <strong>✦ Schedulify Beta v1.5</strong><br>
   Plan smarter. Study better. Stay on track.
 </p>

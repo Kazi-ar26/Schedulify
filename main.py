@@ -11,6 +11,9 @@ Starts:
 import sys
 
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
+
+from pathlib import Path
 
 from ui.login.login_page import LoginPage
 from controllers.auth_controller import AuthController
@@ -21,6 +24,12 @@ from ui.settings.theme_manager import ThemeManager
 from utils.logger import Logger
 
 from api_client.client import load_token, load_user_data, clear_token
+
+
+BASE_DIR = Path(__file__).resolve().parent
+ICON_PATH = BASE_DIR / "Assets" / "icons" / "schedulify.ico"
+
+
 
 
 main_window = None
@@ -41,6 +50,7 @@ def main():
     # ---------------------------------------------
 
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(str(ICON_PATH)))
 
     # ---------------------------------------------
     # Load Theme

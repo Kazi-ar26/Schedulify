@@ -1,24 +1,26 @@
+# -*- mode: python ; coding: utf-8 -*-
+
 from PyInstaller.utils.hooks import collect_submodules
 
 
 a = Analysis(
-    ["main.py"],
+    ['main.py'],
     pathex=[],
     binaries=[],
     datas=[
-        ("Assets", "Assets"),
-        ("styles", "styles"),
-        ("config.json", "."),
-        ("config.py", "."),
+        ('Assets', 'Assets'),
+        ('styles', 'styles'),
+        ('config.json', '.'),
     ],
     hiddenimports=[
         'passlib.handlers.bcrypt',
-    ] + collect_submodules("models"),
+    ] + collect_submodules('models'),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
+    optimize=0,
 )
 
 pyz = PYZ(a.pure)
@@ -26,14 +28,28 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
-    name="Schedulify",
+    exclude_binaries=True,
+    name='Schedulify',
+    icon='Assets/icons/schedulify.ico',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     console=False,
-    icon="Assets/icons/schedulify.ico",
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='Schedulify',
 )

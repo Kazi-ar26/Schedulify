@@ -19,6 +19,9 @@ from PySide6.QtWidgets import (
 )
 
 from PySide6.QtCore import QSize
+from PySide6.QtGui import QIcon
+
+from pathlib import Path
 
 from ui.components.sidebar import Sidebar
 from ui.components.navbar import Navbar
@@ -47,6 +50,10 @@ from models.user import UserRole
 from api_client.auth_api import logout
 
 
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+ICON_PATH = BASE_DIR / "Assets" / "icons" / "schedulify.ico"
+
 class MainWindow(QMainWindow):
 
     def __init__(self, user: dict = None, theme_manager=None):
@@ -57,6 +64,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Schedulify")
         self.setMinimumSize(QSize(1200, 750))
+        self.setWindowIcon(QIcon(str(ICON_PATH)))
 
         self.setup_ui()
 
