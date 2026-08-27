@@ -32,4 +32,4 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
-beta v1.5/
+beta 1.5/
